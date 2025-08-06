@@ -1,0 +1,27 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+    config.vm.box = "bento/ubuntu-22.04-arm64"
+
+    config.vm.define "rust-builder"
+    config.vm.provider "vmware_desktop" do |v|
+        v.vmx["memsize"] = "16384"
+        v.vmx["numvcpus"] = "8"
+    end
+    config.vm.hostname = "rust-builder.local"
+
+    # Install rust
+    config.vm.provision :shell, path: "./install_rust.sh"
+
+    config.vm.provision "file", source: "~/.ssh", destination: "/home/vagrant/.ssh"
+    config.vm.provision "file", source: "~/.gitconfig", destination: "/home/vagrant/.gitconfig"
+
+    config.trigger.after [:up, :reload] do |trigger|
+        trigger.name = "Set static ip: 192.168.205.100"
+        trigger.run_remote = {inline: "ip addr add 192.168.205.100/24 dev eth0"}
+    end
+end
