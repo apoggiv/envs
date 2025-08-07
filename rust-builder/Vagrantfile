@@ -14,8 +14,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
     config.vm.hostname = "rust-builder.local"
 
-    # Install rust
     config.vm.provision :shell, path: "./install_rust.sh"
+    config.vm.provision :shell, path: "../scripts/install_devtools.sh"
+    config.vm.provision :shell, path: "../scripts/install_zsh.sh"
 
     config.vm.provision "file", source: "~/.ssh", destination: "/home/vagrant/.ssh"
     config.vm.provision "file", source: "~/.gitconfig", destination: "/home/vagrant/.gitconfig"
