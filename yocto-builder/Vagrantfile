@@ -1,0 +1,44 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+current_dir = File.dirname(File.expand_path(__FILE__))
+build_disk_path = "#{current_dir}/.vagrant/yocto_builder.vmdk"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+    config.vm.box = "bento/ubuntu-22.04-arm64"
+
+    config.trigger.before :up do |trigger|
+        trigger.run = {path: "create_vmdk.sh"}
+    end
+
+    config.vm.define "yocto-builder"
+    config.vm.provider "vmware_desktop" do |v|
+        v.vmx["memsize"] = "16384"
+        v.vmx["numvcpus"] = "8"
+        v.vmx["nvme0.present"] = "TRUE"
+        v.vmx["nvme0:0.filename"] = build_disk_path
+        v.vmx["nvme0:0.present"] = "TRUE"
+    end
+    config.vm.hostname = "yocto-builder.local"
+
+    config.vm.provision :shell, path: "install_requirements.sh"
+    config.vm.provision :shell, path: "../scripts/install_devtools.sh"
+    config.vm.provision :shell, path: "../scripts/install_zsh.sh"
+
+    config.vm.provision "file", source: "~/.ssh", destination: "/home/vagrant/.ssh"
+    config.vm.provision "file", source: "~/.gitconfig", destination: "/home/vagrant/.gitconfig"
+    config.vm.provision "file", source: "../configs/zshrc", destination: "/home/vagrant/.zshrc"
+    config.vm.provision "file", source: "set_env.sh", destination: "/home/vagrant/.set_env"
+    config.vm.provision "shell", inline: "
+        echo 'source /home/vagrant/.set_env' >> /home/vagrant/.zshrc
+    "
+    config.vm.provision "file", source: "~/.ssh", destination: "/home/vagrant/.ssh"
+    config.trigger.after [:up, :reload] do |trigger|
+        trigger.name = "Mount build disk"
+        trigger.run_remote = {path: "mount_vmdk.sh"}
+    end
+
+end
