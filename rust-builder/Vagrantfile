@@ -20,6 +20,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
     config.vm.provision "file", source: "~/.ssh", destination: "/home/vagrant/.ssh"
     config.vm.provision "file", source: "~/.gitconfig", destination: "/home/vagrant/.gitconfig"
+    config.vm.provision "file", source: "../configs/zshrc", destination: "/home/vagrant/.zshrc"
 
     config.trigger.after [:up, :reload] do |trigger|
         trigger.name = "Set static ip: 192.168.205.100"
